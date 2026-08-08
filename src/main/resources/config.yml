@@ -1,0 +1,13 @@
+format: "<prefix> <name> <suffix>"
+
+tablist:
+  enabled: true
+  header:
+    - "<gray>custom stuff 1</gray>"
+    - "<gray>custom 2</gray>"
+  footer:
+    - "<gray>custom 4</gray>"
+  update-interval-seconds: 5
+  highest-weight-first: true
+  empty-prefix: ""
+  empty-suffix: ""

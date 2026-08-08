@@ -1,0 +1,15 @@
+{
+  "id": "menzelui",
+  "name": "MenzelUI",
+  "version": "${version}",
+  "main": "de.menzel.menzelUI.MenzelUI",
+  "authors": [
+    "Kolja Menzel"
+  ],
+  "dependencies": [
+    {
+      "id": "luckperms",
+      "optional": false
+    }
+  ]
+}
