@@ -3,14 +3,18 @@ version: ${version}
 main: de.menzel.menzelUI.paper.MenzelUIPaper
 api-version: "1.21"
 author: Kolja Menzel
-softdepend:
-  - LuckPerms
+dependencies:
+  server:
+    LuckPerms:
+      load: BEFORE
+      required: true
+      join-classpath: true
 commands:
-  menzeluipaper:
+  mui:
     description: Reloads the MenzelUI Paper config
-    usage: /menzeluipaper reload
-    permission: menzelui.paper.reload
+    usage: /mui reload
+    permission: mui.command.reload
 permissions:
-  menzelui.paper.reload:
+  mui.command.reload:
     description: Allows reloading the MenzelUI Paper config
     default: op

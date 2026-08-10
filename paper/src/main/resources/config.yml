@@ -2,7 +2,7 @@ nametag:
   enabled: true
   update-interval-ticks: 40
   highest-weight-first: true
-  format: "<prefix><gray><name></gray><suffix>"
+  format: "<prefix> <name> <suffix>"
   empty-prefix: ""
   empty-suffix: ""
 

@@ -6,7 +6,7 @@
 
     <groupId>gg.kpjm</groupId>
     <artifactId>MenzelUI-Paper</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
     <packaging>jar</packaging>
 
     <name>MenzelUI Paper</name>
@@ -89,7 +89,6 @@
             <artifactId>api</artifactId>
             <version>5.5</version>
             <scope>provided</scope>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>

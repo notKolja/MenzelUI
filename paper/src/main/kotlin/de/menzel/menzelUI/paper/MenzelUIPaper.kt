@@ -1,14 +1,15 @@
 package de.menzel.menzelUI.paper
 
+import de.menzel.menzelUI.paper.commands.MenzelUICommand
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
 import net.luckperms.api.LuckPerms
+import net.luckperms.api.LuckPermsProvider
 import net.luckperms.api.model.user.User
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
-import org.bukkit.command.Command
-import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -17,46 +18,37 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scoreboard.Criteria
 import org.bukkit.scoreboard.DisplaySlot
-import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Scoreboard
-import org.bukkit.scoreboard.Team
 
 class MenzelUIPaper : JavaPlugin(), Listener {
     private val miniMessage = MiniMessage.miniMessage()
+    private val legacySerializer = LegacyComponentSerializer.builder()
+        .character(LegacyComponentSerializer.SECTION_CHAR)
+        .hexColors()
+        .useUnusualXRepeatedCharacterHexFormat()
+        .build()
     private var configModel = PaperUiConfig()
     private var luckPerms: LuckPerms? = null
     private val scoreboards = mutableMapOf<Player, Scoreboard>()
 
     override fun onEnable() {
+        instance = this
+
         saveDefaultConfig()
         loadSettings()
-        luckPerms = server.servicesManager.load(LuckPerms::class.java)
+        luckPerms = LuckPermsProvider.get()
 
         server.pluginManager.registerEvents(this, this)
         scheduleUpdates()
         updateAll()
+
+        registerCommand("mui", MenzelUICommand())
 
         logger.info("MenzelUI Paper enabled.")
     }
 
     override fun onDisable() {
         scoreboards.clear()
-    }
-
-    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
-        if (!command.name.equals("menzeluipaper", ignoreCase = true)) {
-            return false
-        }
-
-        if (args.firstOrNull()?.equals("reload", ignoreCase = true) != true) {
-            sender.sendMessage(renderPlain("<red>Usage: /$label reload"))
-            return true
-        }
-
-        loadSettings()
-        updateAll()
-        sender.sendMessage(renderPlain("<green>MenzelUI Paper config reloaded."))
-        return true
     }
 
     @EventHandler
@@ -70,7 +62,7 @@ class MenzelUIPaper : JavaPlugin(), Listener {
         server.scheduler.runTaskLater(this, Runnable { updateAll() }, 2L)
     }
 
-    private fun loadSettings() {
+    fun loadSettings() {
         reloadConfig()
         val nametag = config.getConfigurationSection("nametag")
         val scoreboard = config.getConfigurationSection("scoreboard")
@@ -103,7 +95,7 @@ class MenzelUIPaper : JavaPlugin(), Listener {
         server.scheduler.runTaskTimer(this, Runnable { updateAll() }, interval, interval)
     }
 
-    private fun updateAll() {
+    fun updateAll() {
         Bukkit.getOnlinePlayers().forEach { viewer ->
             val scoreboard = scoreboardFor(viewer)
             if (configModel.scoreboard.enabled) {
@@ -130,14 +122,20 @@ class MenzelUIPaper : JavaPlugin(), Listener {
 
         SIDEBAR_ENTRIES.forEach { scoreboard.resetScores(it) }
 
-        configModel.scoreboard.lines.take(MAX_SIDEBAR_LINES).forEachIndexed { index, line ->
+        val lines = configModel.scoreboard.lines.take(MAX_SIDEBAR_LINES)
+        lines.forEachIndexed { index, line ->
             val entry = sidebarEntry(index)
-            objective.getScore(entry).score = configModel.scoreboard.lines.size - index
+            objective.getScore(entry).score = lines.size - index
             val team = scoreboard.getTeam(sidebarTeamName(index)) ?: scoreboard.registerNewTeam(sidebarTeamName(index))
             if (!team.hasEntry(entry)) {
                 team.addEntry(entry)
             }
-            team.prefix(render(line, viewer))
+            team.setPrefix(renderLegacy(line, viewer))
+            team.setSuffix("")
+        }
+
+        (lines.size until MAX_SIDEBAR_LINES).forEach { index ->
+            scoreboard.getTeam(sidebarTeamName(index))?.unregister()
         }
     }
 
@@ -147,16 +145,21 @@ class MenzelUIPaper : JavaPlugin(), Listener {
             .sortedWith(compareByTaggedPlayer())
 
         sortedPlayers.forEachIndexed { index, taggedPlayer ->
-            val teamName = nametagTeamName(taggedPlayer.player)
+            val teamName = nametagTeamName(index, taggedPlayer.player)
             val team = scoreboard.getTeam(teamName) ?: scoreboard.registerNewTeam(teamName)
             val split = splitNametag(configModel.nametag.format)
+            val playerEntry = taggedPlayer.player.name
 
-            team.prefix(render(split.prefix, taggedPlayer.player, taggedPlayer.user))
-            team.suffix(render(split.suffix, taggedPlayer.player, taggedPlayer.user))
+            scoreboard.teams
+                .filter { it.name.startsWith(NAMETAG_TEAM_PREFIX) && it.name != teamName && it.hasEntry(playerEntry) }
+                .forEach { it.removeEntry(playerEntry) }
+
+            team.setPrefix(renderLegacy(split.prefix, taggedPlayer.player, taggedPlayer.user))
+            team.setSuffix(renderLegacy(split.suffix, taggedPlayer.player, taggedPlayer.user))
             team.color = ChatColor.RESET
 
-            if (!team.hasEntry(taggedPlayer.player.name)) {
-                team.addEntry(taggedPlayer.player.name)
+            if (!team.hasEntry(playerEntry)) {
+                team.addEntry(playerEntry)
             }
         }
 
@@ -220,6 +223,9 @@ class MenzelUIPaper : JavaPlugin(), Listener {
         )
     }
 
+    private fun renderLegacy(template: String, player: Player, user: User? = luckPerms?.userManager?.getUser(player.uniqueId)): String =
+        legacySerializer.serialize(render(template, player, user))
+
     private fun String.normalizePlaceholders(): String = this
         .replace("{prefix}", "<prefix>")
         .replace("{name}", "<name>")
@@ -239,15 +245,15 @@ class MenzelUIPaper : JavaPlugin(), Listener {
         .replace("{y}", "<y>")
         .replace("{z}", "<z>")
 
-    private fun renderPlain(template: String): Component =
+    fun renderPlain(template: String): Component =
         miniMessage.deserialize(template)
 
     private fun sidebarEntry(index: Int): String = SIDEBAR_ENTRIES[index]
 
     private fun sidebarTeamName(index: Int): String = "mui_line_$index"
 
-    private fun nametagTeamName(player: Player): String =
-        "$NAMETAG_TEAM_PREFIX${player.uniqueId.toString().take(12)}"
+    private fun nametagTeamName(index: Int, player: Player): String =
+        "$NAMETAG_TEAM_PREFIX${index.toString().padStart(3, '0')}_${player.uniqueId.toString().take(12)}"
 
     private data class PaperUiConfig(
         val nametag: NametagConfig = NametagConfig(),
@@ -282,9 +288,12 @@ class MenzelUIPaper : JavaPlugin(), Listener {
         val suffix: String,
     )
 
-    private companion object {
+    companion object {
+        lateinit var instance: MenzelUIPaper
+            private set
+
         private const val SIDEBAR_OBJECTIVE = "menzeluiSidebar"
-        private const val NAMETAG_TEAM_PREFIX = "mui_"
+        private const val NAMETAG_TEAM_PREFIX = "mui_nt_"
         private const val MAX_SIDEBAR_LINES = 15
         private val SIDEBAR_ENTRIES = ChatColor.values()
             .take(MAX_SIDEBAR_LINES)
