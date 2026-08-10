@@ -1,0 +1,20 @@
+nametag:
+  enabled: true
+  update-interval-ticks: 40
+  highest-weight-first: true
+  format: "<prefix><gray><name></gray><suffix>"
+  empty-prefix: ""
+  empty-suffix: ""
+
+scoreboard:
+  enabled: true
+  update-interval-ticks: 20
+  title: "<gradient:#38bdf8:#f472b6><bold>MenzelUI</bold></gradient>"
+  lines:
+    - "<dark_gray>----------------"
+    - "<gray>Name <white><name>"
+    - "<gray>Rang <white><prefix>"
+    - "<gray>Welt <white><world>"
+    - "<gray>Ping <white><ping>ms"
+    - "<gray>Online <white><online>"
+    - "<dark_gray>----------------"

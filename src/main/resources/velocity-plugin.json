@@ -1,6 +1,6 @@
 {
   "id": "menzelui",
-  "name": "MenzelUI",
+  "name": "MenzelUI-Velocity",
   "version": "${version}",
   "main": "de.menzel.menzelUI.MenzelUI",
   "authors": [

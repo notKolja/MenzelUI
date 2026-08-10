@@ -1,0 +1,16 @@
+name: MenzelUI-Paper
+version: ${version}
+main: de.menzel.menzelUI.paper.MenzelUIPaper
+api-version: "1.21"
+author: Kolja Menzel
+softdepend:
+  - LuckPerms
+commands:
+  menzeluipaper:
+    description: Reloads the MenzelUI Paper config
+    usage: /menzeluipaper reload
+    permission: menzelui.paper.reload
+permissions:
+  menzelui.paper.reload:
+    description: Allows reloading the MenzelUI Paper config
+    default: op

@@ -5,15 +5,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>gg.kpjm</groupId>
-    <artifactId>MenzelUI</artifactId>
-    <version>0.1.0</version>
+    <artifactId>MenzelUI-Velocity</artifactId>
+    <version>0.1.1</version>
     <packaging>jar</packaging>
 
-    <name>MenzelUI</name>
+    <name>MenzelUI Velocity</name>
 
     <properties>
         <java.version>21</java.version>
-        <kotlin.version>2.4.0</kotlin.version>
+        <kotlin.version>2.2.0</kotlin.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
