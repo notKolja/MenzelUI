@@ -2,6 +2,7 @@ package de.menzel.menzelUI.paper
 
 import de.menzel.menzelUI.paper.commands.MenzelUICommand
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
@@ -89,10 +90,10 @@ class MenzelUIPaper : JavaPlugin(), Listener {
     }
 
     private fun scheduleUpdates() {
-        val intervals = listOf(
+        val intervals = listOfNotNull(
             configModel.nametag.updateIntervalTicks.takeIf { configModel.nametag.enabled },
             configModel.scoreboard.updateIntervalTicks.takeIf { configModel.scoreboard.enabled },
-        ).filterNotNull()
+        )
 
         val interval = intervals.minOrNull() ?: 20L
         server.scheduler.runTaskTimer(this, Runnable { updateAll() }, interval, interval)
@@ -160,6 +161,7 @@ class MenzelUIPaper : JavaPlugin(), Listener {
 
             team.prefix(render(split.prefix, taggedPlayer.player, taggedPlayer.user))
             team.suffix(render(split.suffix, taggedPlayer.player, taggedPlayer.user))
+            team.color(findLastMiniMessageColor(split.prefix) ?: NamedTextColor.WHITE)
 
             if (!team.hasEntry(playerEntry)) {
                 team.addEntry(playerEntry)
@@ -190,9 +192,9 @@ class MenzelUIPaper : JavaPlugin(), Listener {
         val marker = "<name>"
         val index = normalized.indexOf(marker)
         if (index < 0) {
-            return MenzelUIPaper.NametagSplit(normalized, "")
+            return NametagSplit(normalized, "")
         }
-        val prefix = normalized.substring(0, index)
+        val prefix = normalized.take(index)
         return NametagSplit(
             prefix = prefix,
             suffix = normalized.substring(index + marker.length),
@@ -313,12 +315,12 @@ class MenzelUIPaper : JavaPlugin(), Listener {
         else -> null
     }
 
-    private fun findLastMiniMessageColor(template: String): ChatColor? {
-        var color: ChatColor? = null
+    private fun findLastMiniMessageColor(template: String): NamedTextColor? {
+        var color: NamedTextColor? = null
         MINI_MESSAGE_COLOR_PATTERN.findAll(template).forEach { match ->
             val tag = (match.groupValues.getOrNull(2).takeUnless { it.isNullOrBlank() } ?: match.groupValues[1]).lowercase()
             if (tag == "reset") {
-                color = ChatColor.RESET
+                color = null
                 return@forEach
             }
             color = MINI_MESSAGE_CHAT_COLORS[tag] ?: color
@@ -397,22 +399,22 @@ class MenzelUIPaper : JavaPlugin(), Listener {
         private const val MAX_SIDEBAR_LINES = 15
         private val MINI_MESSAGE_COLOR_PATTERN = Regex("<([a-z_]+)(?::([a-z_]+|#[0-9a-fA-F]{6}))?>")
         private val MINI_MESSAGE_CHAT_COLORS = mapOf(
-            "black" to ChatColor.BLACK,
-            "dark_blue" to ChatColor.DARK_BLUE,
-            "dark_green" to ChatColor.DARK_GREEN,
-            "dark_aqua" to ChatColor.DARK_AQUA,
-            "dark_red" to ChatColor.DARK_RED,
-            "dark_purple" to ChatColor.DARK_PURPLE,
-            "gold" to ChatColor.GOLD,
-            "gray" to ChatColor.GRAY,
-            "dark_gray" to ChatColor.DARK_GRAY,
-            "blue" to ChatColor.BLUE,
-            "green" to ChatColor.GREEN,
-            "aqua" to ChatColor.AQUA,
-            "red" to ChatColor.RED,
-            "light_purple" to ChatColor.LIGHT_PURPLE,
-            "yellow" to ChatColor.YELLOW,
-            "white" to ChatColor.WHITE,
+            "black" to NamedTextColor.BLACK,
+            "dark_blue" to NamedTextColor.DARK_BLUE,
+            "dark_green" to NamedTextColor.DARK_GREEN,
+            "dark_aqua" to NamedTextColor.DARK_AQUA,
+            "dark_red" to NamedTextColor.DARK_RED,
+            "dark_purple" to NamedTextColor.DARK_PURPLE,
+            "gold" to NamedTextColor.GOLD,
+            "gray" to NamedTextColor.GRAY,
+            "dark_gray" to NamedTextColor.DARK_GRAY,
+            "blue" to NamedTextColor.BLUE,
+            "green" to NamedTextColor.GREEN,
+            "aqua" to NamedTextColor.AQUA,
+            "red" to NamedTextColor.RED,
+            "light_purple" to NamedTextColor.LIGHT_PURPLE,
+            "yellow" to NamedTextColor.YELLOW,
+            "white" to NamedTextColor.WHITE,
         )
         private val SIDEBAR_ENTRIES = ChatColor.values()
             .take(MAX_SIDEBAR_LINES)
